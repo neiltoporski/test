@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Example</title>
+<style>
+	
+	#loginForm button[type="submit"] {
+	  width: 75px;
+	  height: 35px;
+	  background-color: green;
+	  color: white;
+	  border: none;
+	  cursor: pointer;
+	  border-radius: 5px;
+	}
+	
+</style>
+</head>
+<body>
+<!-- Login form -->
+<form id="loginForm">
+  <label for="lastName">Last Name:</label>
+  <input type="text" id="lastName" name="lastName" required><br><br>
+  <label for="email">Email:</label>
+  <input type="email" id="email" name="email" required><br><br>
+  <button type="submit">Login</button>
+</form>
+
+<!-- Text to display after login -->
+<p id="loggedInText" style="display: none;">You are now logged in.</p>
+
+<script src="getJSONData.js"></script>
+
+<script>
+// Function to handle form submission
+document.getElementById('loginForm').addEventListener('submit', async function(event) {
+  event.preventDefault(); // Prevent the default form submission
+
+  // Get input values
+  const lastName = document.getElementById('lastName').value.trim();
+  const email = document.getElementById('email').value.trim();
+
+  // Fetch data and display
+  try {
+	const jsonDataString = await getJSONData(); // Assuming getJSONData is defined in getJSONData.js
+	const jsonData = JSON.parse(jsonDataString);
+
+	// Check if user is in the JSON array
+	let user = null;
+	for (let i = 0; i < jsonData.length; i++) {
+	  if (jsonData[i].LastName === lastName && jsonData[i].Email === email) {
+		user = jsonData[i];
+		break; // Stop the loop once a matching user is found
+	  }
+	}
+
+	// If user found, show logged in text
+	if (user) {
+	  document.body.innerHTML = ''; // Clear the body
+
+	  // Display the entire JSON array with a header
+	  document.body.innerHTML += '<div><h2>JSON Array</h2></div>';
+
+	  // Loop through JSON objects and display
+	  for (let index = 0; index < jsonData.length; index++) {
+		const obj = jsonData[index];
+		document.body.innerHTML += '<div><h3>Object ' + index + '</h3><pre>' + JSON.stringify(obj, null, 2) + '</pre></div>';
+	  }
+	} else {
+	  alert('Invalid credentials. Please try again.');
+	}
+  } catch (error) {
+	console.error('Error fetching and displaying data:', error);
+  }
+});
+</script>
+
+</body>
+</html>
