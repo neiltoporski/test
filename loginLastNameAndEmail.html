@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Example</title>
+  <style>
+	#loginForm button[type="submit"] {
+	  width: 75px;
+	  height: 35px;
+	  background-color: green;
+	  color: white;
+	  border: none;
+	  cursor: pointer;
+	  border-radius: 5px;
+	}
+	
+	/* Styling for the modal */
+	.modal {
+	  display: none;
+	  position: fixed;
+	  z-index: 1;
+	  left: 0;
+	  top: 0;
+	  width: 100%;
+	  height: 100%;
+	  overflow: auto;
+	  background-color: rgba(0, 0, 0, 0.5);
+	}
+
+	/* Modal content */
+	.modal-content {
+	  background-color: #fefefe;
+	  margin: 10% auto;
+	  padding: 20px;
+	  border: 1px solid #888;
+	  width: 80%;
+	  max-height: 70%;
+	  overflow-y: auto;
+	}
+
+	/* Close button */
+	.close {
+	  color: #aaa;
+	  float: right;
+	  font-size: 28px;
+	  font-weight: bold;
+	}
+
+	.close:hover,
+	.close:focus {
+	  color: black;
+	  text-decoration: none;
+	  cursor: pointer;
+	}
+  </style>
+</head>
+<body>
+  <!-- Login form -->
+  <form id="loginForm">
+	<label for="lastName">Last Name:</label>
+	<input type="text" id="lastName" name="lastName" required><br><br>
+	<label for="email">Email:</label>
+	<input type="email" id="email" name="email" required><br><br>
+	<button type="submit">Login</button>
+  </form>
+
+  <!-- Text to display after login -->
+  <p id="loggedInText" style="display: none;">You are now logged in.</p>
+
+  <!-- The Modal -->
+  <div id="myModal" class="modal">
+	<!-- Modal content -->
+	<div class="modal-content">
+	  <span class="close" onclick="closeModal()">&times;</span>
+	  <h2>Register</h2>
+	  <form id="modalForm">
+		<label for="modalLastName">Last Name:</label>
+		<input type="text" id="modalLastName" name="modalLastName" required><br><br>
+		<label for="modalEmail">Email:</label>
+		<input type="email" id="modalEmail" name="modalEmail" required><br><br>
+		<button type="submit">Submit</button>
+	  </form>
+	</div>
+  </div>
+
+  <script src="getJSONData.js"></script>
+
+  <script>
+	// Define binID and apiKey
+	const binID = '655ea5e30574da7622ca6bc1';
+	const apiKey = '$2b$10$zhqQdXWQew55ytBi6tw5teLZTtv2I49Bx0K2R7XG.8DdZ.tlirKxC';
+
+	// Function to handle form submission
+	document.getElementById('loginForm').addEventListener('submit', async function(event) {
+	  event.preventDefault(); // Prevent the default form submission
+
+	  // Get input values
+	  const lastName = document.getElementById('lastName').value.trim();
+	  const email = document.getElementById('email').value.trim();
+
+	  // Fetch data and display
+	  try {
+		const jsonDataString = await getJSONData(); // Assuming getJSONData is defined in getJSONData.js
+		const jsonData = JSON.parse(jsonDataString);
+
+		// Check if user is in the JSON array
+		let user = null;
+		for (let i = 0; i < jsonData.length; i++) {
+		  if (jsonData[i].LastName === lastName && jsonData[i].Email === email) {
+			user = jsonData[i];
+			break; // Stop the loop once a matching user is found
+		  }
+		}
+
+		// If user found, show logged in text
+		if (user) {
+		  document.body.innerHTML = ''; // Clear the body
+
+		  // Display the entire JSON array with a header
+		  document.body.innerHTML += '<div><h2>JSON Array</h2></div>';
+
+		  // Loop through JSON objects and display
+		  for (let index = 0; index < jsonData.length; index++) {
+			const obj = jsonData[index];
+			document.body.innerHTML += '<div><h3>Object ' + index + '</h3><pre>' + JSON.stringify(obj, null, 2) + '</pre></div>';
+		  }
+		} else {
+		  // If user not found, show modal to enter details
+		  openModal();
+		}
+	  } catch (error) {
+		console.error('Error fetching and displaying data:', error);
+		alert('An error occurred while processing your request.');
+	  }
+	});
+
+	// Function to open the modal
+	function openModal() {
+	  // Get the modal
+	  var modal = document.getElementById("myModal");
+	  // Display the modal
+	  modal.style.display = "block";
+	}
+
+	// Function to close the modal
+	function closeModal() {
+	  // Get the modal
+	  var modal = document.getElementById("myModal");
+	  // Hide the modal
+	  modal.style.display = "none";
+	}
+
+	// Handle modal form submission
+	document.getElementById('modalForm').addEventListener('submit', async function(event) {
+	  event.preventDefault(); // Prevent the default form submission
+
+	  // Get input values from modal
+	  const lastName = document.getElementById('modalLastName').value.trim();
+	  const email = document.getElementById('modalEmail').value.trim();
+
+	  // Fetch existing data
+	  try {
+		const jsonDataString = await getJSONData(); // Assuming getJSONData is defined in getJSONData.js
+		const jsonData = JSON.parse(jsonDataString);
+
+		// Create new user
+		const newUser = {
+		  "FirstName": "", // Add first name if required
+		  "LastName": lastName,
+		  "Address": "", // Add address if required
+		  "City": "", // Add city if required
+		  "State": "", // Add state if required
+		  "Zip": "", // Add zip code if required
+		  "Email": email,
+		  "Phone": "" // Add phone if required
+		};
+
+		// Add new user to JSON array
+		jsonData.push(newUser);
+
+		// Update JSON data on jsonbin.io
+		await updateJSONData(jsonData);
+
+		alert('You have been added to the system. Please try to log in again.');
+		closeModal();
+	  } catch (error) {
+		console.error('Error updating data:', error);
+		alert('An error occurred while updating your information.');
+	  }
+	});
+
+	// Function to update JSON data on jsonbin.io
+	async function updateJSONData(updatedData) {
+	  const jsonBinUrl = `https://api.jsonbin.io/v3/b/${binID}`; // Use template literal for the bin URL
+
+	  const response = await fetch(jsonBinUrl, {
+		method: 'PUT',
+		headers: {
+		  'Content-Type': 'application/json',
+		  'X-Master-Key': apiKey
+		},
+		body: JSON.stringify(updatedData)
+	  });
+
+	  if (!response.ok) {
+		throw new Error('Failed to update JSON data');
+	  } else {
+		alert('Data was updated successfully');
+	  }
+	}
+
+	// Close the modal if the user clicks outside of it
+	window.onclick = function(event) {
+	  var modal = document.getElementById("myModal");
+	  if (event.target == modal) {
+		modal.style.display = "none";
+	  }
+	}
+  </script>
+
+</body>
+</html>

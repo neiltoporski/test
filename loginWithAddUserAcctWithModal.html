@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<link rel="stylesheet" type="text/css" href="login.css">
+	<title>Account Login</title>
+	
+	<style>
+		/* Background styling */
+		body {
+			background-image: url('pasta.jpg');
+			background-size: cover;
+			background-repeat: no-repeat;
+			background-position: center;
+			min-height: 100vh;
+			margin: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			font-family: Arial, sans-serif;
+		}
+	
+		.modal-content {
+			border-radius: 10px;
+			background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent modal background */
+		}
+	</style>
+</head>
+<body onload="showLoginModal()">
+
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+	<div class="modal-content">
+	  <div class="modal-header">
+		<h5 class="modal-title" id="loginModalLabel">Login</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+	  </div>
+	  <div class="modal-body">
+		<!-- Login Form -->
+		<div id="login-container">
+		  <input type="text" id="lastName" placeholder="Last Name" autocomplete="off" class="form-control mb-2">
+		  <input type="password" id="password" placeholder="Password" autocomplete="off" class="form-control mb-2">
+		  <button class="btn btn-primary w-100" onclick="login()">Login</button>
+		  <p id="errorMessage" style="color: red; display: none; margin-top: 10px;">Invalid login. Please try again.</p>
+		</div>
+
+		<!-- New Account Form (Initially Hidden) -->
+		<div id="newAccountContainer" style="display: none;">
+		  <h5>Create New Account</h5>
+		  <input type="text" id="firstName" placeholder="First Name" autocomplete="off" class="form-control mb-2">
+		  <input type="text" id="newLastName" placeholder="Last Name" autocomplete="off" class="form-control mb-2">
+		  <input type="password" id="newPassword" placeholder="Password" autocomplete="off" class="form-control mb-2">
+		  <input type="email" id="email" placeholder="Email" autocomplete="off" class="form-control mb-2">
+		  <button class="btn btn-success w-100" onclick="createAccount()">Create Account</button>
+		</div>
+	  </div>
+	</div>
+  </div>
+</div>
+
+<!-- JSON Data Scripts -->
+<script src="getJSONData.js"></script>
+<script src="putJSONData.js"></script>
+
+<script>
+  // Show the login modal on page load
+  function showLoginModal() {
+	const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+	loginModal.show();
+  }
+
+  // Function to handle user login
+  async function login() {
+	const lastName = document.getElementById('lastName').value;
+	const password = document.getElementById('password').value;
+
+	try {
+	  // Fetch user data from JSONbin.io
+	  const data = await getJSONData();
+	  const users = JSON.parse(data);
+
+	  // Search for the user in JSON data with exact field names (case-sensitive)
+	  const user = users.find(u => u.LastName === lastName && u.Password === password);
+
+	  if (user) {
+		alert("Login Successful");
+		const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+		loginModal.hide(); // Hide modal after successful login
+		document.getElementById('errorMessage').style.display = 'none';
+	  } else {
+		document.getElementById('errorMessage').style.display = 'block';
+		document.getElementById('errorMessage').innerText = "Invalid login. Please try again or create a new account.";
+
+		// Show the new account form
+		document.getElementById('newAccountContainer').style.display = 'block';
+		document.getElementById('login-container').style.display = 'none';
+	  }
+	} catch (error) {
+	  console.error("Error during login:", error);
+	  alert("An error occurred while trying to log in.");
+	}
+  }
+
+  // Function to handle new account creation and add to JSONbin.io
+  async function createAccount() {
+	const firstName = document.getElementById('firstName').value;
+	const newLastName = document.getElementById('newLastName').value;
+	const newPassword = document.getElementById('newPassword').value;
+	const email = document.getElementById('email').value;
+
+	if (firstName && newLastName && newPassword && email) {
+	  const newUser = {
+		FirstName: firstName,
+		LastName: newLastName,
+		Password: newPassword,
+		email: email
+	  };
+
+	  try {
+		// Fetch existing users from JSONbin.io
+		const data = await getJSONData();
+		const users = JSON.parse(data);
+
+		// Append the new user to the existing users array
+		users.push(newUser);
+
+		// Save updated users array back to JSONbin.io
+		await putJSONData(users);
+
+		alert("New user account created successfully!");
+		document.getElementById('newAccountContainer').style.display = 'none';
+		document.getElementById('login-container').style.display = 'block';
+		const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+		loginModal.hide(); // Hide modal after account creation
+	  } catch (error) {
+		console.error("Error updating JSONbin.io:", error);
+		alert("An error occurred while creating the account.");
+	  }
+	} else {
+	  alert("Please fill out all fields to create a new account.");
+	}
+  }
+</script>
+
+</body>
+</html>
